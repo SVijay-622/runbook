@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Status Board</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0c12;
+      --surface: #111420;
+      --surface2: #181d2e;
+      --border: #232840;
+      --accent: #4f7cff;
+      --accent2: #00e5c3;
+      --accent3: #ff6b6b;
+      --accent4: #ffd166;
+      --text: #e8eaf2;
+      --muted: #6b7399;
+      --green: #2dd4a0;
+      --orange: #ff9a3c;
+      --red: #ff4f6a;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 3px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-logo span { color: var(--accent2); }
+
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .nav-tab {
+      padding: 8px 20px;
+      border-radius: 7px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .nav-tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .live-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(45, 212, 160, .12);
+      border: 1px solid rgba(45, 212, 160, .3);
+      color: var(--green);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .4; transform: scale(1.4); }
+    }
+
+    /* ── PAGES ── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── DASHBOARD ── */
+    .dashboard { padding: 28px 32px; }
+
+    .date-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .date-display {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+
+    .date-display small {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: 0;
+      display: block;
+    }
+
+    .date-nav {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .date-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all .2s;
+    }
+
+    .date-btn:hover { background: var(--surface2); border-color: var(--accent); }
+
+    .date-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s;
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .summary-card.c0::before { background: var(--accent); }
+    .summary-card.c1::before { background: var(--accent4); }
+    .summary-card.c2::before { background: var(--accent2); }
+    .summary-card.c3::before { background: var(--red); }
+    .summary-card.c4::before { background: var(--green); }
+    .summary-card.c5::before { background: var(--orange); }
+    .summary-card.c6::before { background: #c77dff; }
+    .summary-card.c7::before { background: #48cae4; }
+    .summary-card.c8::before { background: #f72585; }
+    .summary-card.c9::before { background: #b5e48c; }
+
+    .summary-card:hover { transform: translateY(-2px); }
+
+    .summary-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .summary-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 40px;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    /* ── PROGRESS BAR ── */
+    .progress-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .progress-label {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .progress-bar-wrap {
+      flex: 1;
+      background: var(--bg);
+      height: 10px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      transition: width .6s ease;
+    }
+
+    .progress-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent2);
+      white-space: nowrap;
+    }
+
+    /* ── EMPLOYEE TABLE ── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .refresh-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all .2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .refresh-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: var(--surface2);
+      padding: 12px 14px;
+      text-align: center;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    thead th:first-child { text-align: left; padding-left: 22px; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(79, 124, 255, .05); }
+
+    tbody td {
+      padding: 13px 14px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+    }
+
+    tbody td:first-child {
+      text-align: left;
+      padding-left: 22px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .badge-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .status-tag {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      margin-left: 6px;
+    }
+
+    .tag-submitted {
+      background: rgba(45, 212, 160, .15);
+      color: var(--green);
+    }
+
+    .tag-pending {
+      background: rgba(255, 107, 107, .15);
+      color: var(--red);
+    }
+
+    .cell-zero { color: var(--muted); }
+
+    .last-updated {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 12px 22px;
+      border-top: 1px solid var(--border);
+      text-align: right;
+    }
+
+    /* ── SUBMIT FORM ── */
+    .submit-page { padding: 28px 32px; max-width: 750px; margin: 0 auto; }
+
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .form-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30px;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .form-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    select, input[type="number"], input[type="date"], textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 11px 14px;
+      border-radius: 9px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+
+    select option { background: var(--surface); }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .fields-grid .form-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .field-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--accent), #6b8fff);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: .5px;
+      transition: opacity .2s, transform .1s;
+    }
+
+    .submit-btn:hover { opacity: .9; }
+    .submit-btn:active { transform: scale(.99); }
+    .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .3s ease;
+      pointer-events: none;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: #1a3a2e; border: 1px solid var(--green); color: var(--green); }
+    .toast.error { background: #3a1a1a; border: 1px solid var(--red); color: var(--red); }
+
+    /* ── HISTORY PAGE ── */
+    .history-page { padding: 28px 32px; }
+
+    .history-filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      align-items: center;
+    }
+
+    .history-filters select {
+      min-width: 200px;
+    }
+
+    .history-table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .history-table-wrap table td {
+      font-size: 13px;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 12px 16px; }
+      .dashboard, .submit-page, .history-page { padding: 20px 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ── TICKER ── */
+    .ticker-bar {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 0;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .ticker-inner {
+      display: inline-block;
+      animation: ticker 30s linear infinite;
+    }
+
+    @keyframes ticker {
+      0% { transform: translateX(100vw); }
+      100% { transform: translateX(-100%); }
+    }
+
+    .ticker-item {
+      display: inline-block;
+      margin-right: 60px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+    }
+
+    .ticker-item .name { color: var(--accent2); font-weight: 600; }
+    .ticker-item .val { color: var(--accent4); }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Team<span>Board</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')">📊 Live Board</button>
+    <button class="nav-tab" onclick="showPage('submit')">✏️ Submit Status</button>
+    <button class="nav-tab" onclick="showPage('history')">📅 History</button>
+  </div>
+  <div class="live-pill">
+    <div class="live-dot"></div>
+    LIVE
+  </div>
+</nav>
+
+<!-- TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-inner" id="ticker">Loading team status...</div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div class="page active" id="page-dashboard">
+  <div class="dashboard">
+    <div class="date-header">
+      <div class="date-display">
+        <small>Daily Status Report</small>
+        <span id="display-date">Today</span>
+      </div>
+      <div class="date-nav">
+        <button class="date-btn" onclick="changeDate(-1)">← Prev</button>
+        <input type="date" class="date-input" id="date-picker" onchange="loadDate(this.value)"/>
+        <button class="date-btn" onclick="changeDate(1)">Next →</button>
+        <button class="date-btn" onclick="loadToday()">Today</button>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-grid" id="summary-grid">
+      <div class="summary-card c0"><div class="summary-label">In Progress</div><div class="summary-value" id="s-inProgress">—</div></div>
+      <div class="summary-card c1"><div class="summary-label">On Hold</div><div class="summary-value" id="s-onHold">—</div></div>
+      <div class="summary-card c2"><div class="summary-label">Jira In Prog.</div><div class="summary-value" id="s-jiraInProgress">—</div></div>
+      <div class="summary-card c3"><div class="summary-label">ACR</div><div class="summary-value" id="s-acr">—</div></div>
+      <div class="summary-card c4"><div class="summary-label">AIR</div><div class="summary-value" id="s-air">—</div></div>
+      <div class="summary-card c5"><div class="summary-label">De-escalated</div><div class="summary-value" id="s-deEscalated">—</div></div>
+      <div class="summary-card c6"><div class="summary-label">Open</div><div class="summary-value" id="s-open">—</div></div>
+      <div class="summary-card c7"><div class="summary-label">AFR</div><div class="summary-value" id="s-afr">—</div></div>
+      <div class="summary-card c8"><div class="summary-label">ANP</div><div class="summary-value" id="s-anp">—</div></div>
+      <div class="summary-card c9"><div class="summary-label">RCA Pending</div><div class="summary-value" id="s-rcaPending">—</div></div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-section">
+      <div class="progress-label">Submission Progress</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-count" id="progress-count">0 / 13</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title">Employee Status Overview</div>
+        <button class="refresh-btn" onclick="loadDashboard()">⟳ Refresh</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>In Prog.</th>
+            <th>On Hold</th>
+            <th>Jira</th>
+            <th>ACR</th>
+            <th>AIR</th>
+            <th>De-esc.</th>
+            <th>Open</th>
+            <th>AFR</th>
+            <th>ANP</th>
+            <th>RCA</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="status-table-body">
+          <tr><td colspan="12" style="text-align:center; color:var(--muted); padding:40px;">Loading...</td></tr>
+        </tbody>
+      </table>
+      <div class="last-updated" id="last-updated">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT PAGE -->
+<div class="page" id="page-submit">
+  <div class="submit-page">
+    <div class="form-card">
+      <div class="form-title">Submit Your Status</div>
+      <div class="form-subtitle">Fill in your daily work counts and click Submit</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Your Name</label>
+          <select id="f-name" required>
+            <option value="">— Select your name —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="f-date" />
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="fields-grid">
+        <div class="form-group">
+          <label><span class="field-dot" style="background:var(--accent)"></span>In Progress</label>
+          <input type="number" id="f-inProgress" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label><span class="field-dot" style="background:var(--accent4)"></span>On Hold</label>
+          <input type="number" id="f-onHold" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label><span class="field-dot" style="background:var(--accent2)"></span>Jira In Progress</label>
+          <input type="number" id="f-jiraInProgress" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label><span class="field-dot" style="background:var(--red)"></span>ACR</label>
+          <input type="number" id="f-acr" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label><span class="field-dot" style="background:var(--green)"></span>AIR</label>
+          <input type="number" id="f-air" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label><span class="field-dot" style="background:var(--orange)"></span>De-escalated</label>
+          <input type="number" id="f-deEscalated" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label><span class="field-dot" style="background:#c77dff"></span>Open</label>
+          <input type="number" id="f-open" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label><span class="field-dot" style="background:#48cae4"></span>AFR</label>
+          <input type="number" id="f-afr" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label><span class="field-dot" style="background:#f72585"></span>ANP</label>
+          <input type="number" id="f-anp" min="0" value="0" />
+        </div>
+        <div class="form-group">
+          <label><span class="field-dot" style="background:#b5e48c"></span>RCA Pending</label>
+          <input type="number" id="f-rcaPending" min="0" value="0" />
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label>Notes / Updates (optional)</label>
+        <textarea id="f-notes" placeholder="Any blockers, special updates, or remarks..."></textarea>
+      </div>
+
+      <button class="submit-btn" onclick="submitStatus()" id="submit-btn">Submit Status →</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY PAGE -->
+<div class="page" id="page-history">
+  <div class="history-page">
+    <div class="date-header">
+      <div class="date-display">
+        <small>Submission History</small>
+        History Log
+      </div>
+    </div>
+    <div class="history-filters">
+      <label style="text-transform:none; letter-spacing:0; font-size:14px;">Filter by:</label>
+      <select id="h-filter" onchange="loadHistory()">
+        <option value="">All Employees</option>
+      </select>
+    </div>
+    <div class="history-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left; padding-left:22px;">Employee</th>
+            <th>Date</th>
+            <th>In Prog.</th>
+            <th>On Hold</th>
+            <th>Jira</th>
+            <th>ACR</th>
+            <th>AIR</th>
+            <th>De-esc.</th>
+            <th>Open</th>
+            <th>AFR</th>
+            <th>ANP</th>
+            <th>RCA</th>
+          </tr>
+        </thead>
+        <tbody id="history-table-body">
+          <tr><td colspan="12" style="text-align:center; color:var(--muted); padding:40px;">Loading history...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────
+  const API = ''; // same origin; change to 'https://your-backend.vercel.app' if separate
+
+  const EMPLOYEES = [
+    'Vijayandiran S', 'Swathi', 'Ummu Halima', 'Fahad', 'Faaiz',
+    'Riaz', 'Ismail', 'Hashim', 'Javith', 'Ajay', 'Sangeetha', 'Raj', 'Gokul'
+  ];
+
+  const FIELDS = [
+    { key: 'inProgress',    label: 'In Progress' },
+    { key: 'onHold',        label: 'On Hold' },
+    { key: 'jiraInProgress',label: 'Jira' },
+    { key: 'acr',           label: 'ACR' },
+    { key: 'air',           label: 'AIR' },
+    { key: 'deEscalated',   label: 'De-esc.' },
+    { key: 'open',          label: 'Open' },
+    { key: 'afr',           label: 'AFR' },
+    { key: 'anp',           label: 'ANP' },
+    { key: 'rcaPending',    label: 'RCA' },
+  ];
+
+  const COLORS = ['#4f7cff','#1abc9c','#e74c3c','#f39c12','#9b59b6','#e67e22','#2ecc71','#e91e63','#00bcd4','#ff5722','#795548','#607d8b','#ffd700'];
+
+  let currentDate = todayStr();
+
+  function todayStr() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function formatDate(d) {
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function getColor(name) {
+    const idx = EMPLOYEES.indexOf(name);
+    return COLORS[(idx >= 0 ? idx : 0) % COLORS.length];
+  }
+
+  function initials(name) {
+    return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+  }
+
+  // ── Pages ────────────────────────────────────────────────────
+  function showPage(p) {
+    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('page-' + p).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if (p === 'dashboard') loadDashboard();
+    if (p === 'history') loadHistory();
+  }
+
+  // ── Date Nav ─────────────────────────────────────────────────
+  function changeDate(delta) {
+    const d = new Date(currentDate + 'T00:00:00');
+    d.setDate(d.getDate() + delta);
+    currentDate = d.toISOString().split('T')[0];
+    document.getElementById('date-picker').value = currentDate;
+    loadDashboard();
+  }
+
+  function loadDate(val) {
+    currentDate = val;
+    loadDashboard();
+  }
+
+  function loadToday() {
+    currentDate = todayStr();
+    document.getElementById('date-picker').value = currentDate;
+    loadDashboard();
+  }
+
+  // ── Dashboard ────────────────────────────────────────────────
+  async function loadDashboard() {
+    document.getElementById('display-date').textContent = formatDate(currentDate);
+    document.getElementById('date-picker').value = currentDate;
+
+    const [statusRes, summaryRes] = await Promise.all([
+      fetch(`${API}/api/status?date=${currentDate}`),
+      fetch(`${API}/api/summary?date=${currentDate}`)
+    ]);
+
+    const { statuses } = await statusRes.json();
+    const { summary, submitted, total } = await summaryRes.json();
+
+    // Update summary cards
+    FIELDS.forEach(f => {
+      const el = document.getElementById('s-' + f.key);
+      if (el) el.textContent = summary[f.key] ?? 0;
+    });
+
+    // Progress
+    const pct = Math.round((submitted / total) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = `${submitted} / ${total} submitted`;
+
+    // Build status map
+    const map = {};
+    statuses.forEach(s => map[s.name] = s);
+
+    // Render table
+    const tbody = document.getElementById('status-table-body');
+    tbody.innerHTML = EMPLOYEES.map(name => {
+      const s = map[name];
+      const color = getColor(name);
+      const tag = s
+        ? `<span class="status-tag tag-submitted">✓ Done</span>`
+        : `<span class="status-tag tag-pending">Pending</span>`;
+      const cells = FIELDS.map(f => {
+        const v = s ? (s[f.key] || 0) : '—';
+        return `<td class="${v === 0 || v === '—' ? 'cell-zero' : ''}">${v}</td>`;
+      }).join('');
+      const noteCell = s && s.notes
+        ? `<td title="${s.notes}" style="color:var(--accent4); cursor:default;">📝</td>`
+        : `<td class="cell-zero">—</td>`;
+      return `<tr>
+        <td>
+          <div class="badge-name">
+            <div class="avatar" style="background:${color}">${initials(name)}</div>
+            ${name} ${tag}
+          </div>
+        </td>
+        ${cells}
+        ${noteCell}
+      </tr>`;
+    }).join('');
+
+    document.getElementById('last-updated').textContent = `Last refreshed: ${new Date().toLocaleTimeString('en-IN')}`;
+
+    updateTicker(statuses, map);
+  }
+
+  function updateTicker(statuses, map) {
+    const items = EMPLOYEES.map(name => {
+      const s = map[name];
+      if (!s) return `<span class="ticker-item"><span class="name">${name}</span> ⏳ Pending</span>`;
+      return `<span class="ticker-item"><span class="name">${name}</span> · IP:<span class="val">${s.inProgress||0}</span> · OH:<span class="val">${s.onHold||0}</span> · Open:<span class="val">${s.open||0}</span></span>`;
+    }).join('');
+    document.getElementById('ticker').innerHTML = items + items; // duplicate for seamless loop
+  }
+
+  // ── Submit ───────────────────────────────────────────────────
+  function populateSelects() {
+    ['f-name', 'h-filter'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      EMPLOYEES.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      });
+    });
+    document.getElementById('f-date').value = todayStr();
+  }
+
+  async function submitStatus() {
+    const btn = document.getElementById('submit-btn');
+    const name = document.getElementById('f-name').value;
+    const date = document.getElementById('f-date').value;
+
+    if (!name) return showToast('Please select your name', 'error');
+    if (!date) return showToast('Please select a date', 'error');
+
+    const payload = { name, date };
+    FIELDS.forEach(f => {
+      payload[f.key] = parseInt(document.getElementById('f-' + f.key).value) || 0;
+    });
+    payload.notes = document.getElementById('f-notes').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+      const res = await fetch(`${API}/api/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error('Server error');
+      showToast(`✓ Status submitted for ${name}`, 'success');
+
+      // Reset form
+      FIELDS.forEach(f => document.getElementById('f-' + f.key).value = 0);
+      document.getElementById('f-notes').value = '';
+    } catch (err) {
+      showToast('Failed to submit. Check connection.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit Status →';
+    }
+  }
+
+  // ── History ──────────────────────────────────────────────────
+  async function loadHistory() {
+    const name = document.getElementById('h-filter').value;
+    const url = name ? `${API}/api/status/history?name=${encodeURIComponent(name)}` : `${API}/api/status/history`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const tbody = document.getElementById('history-table-body');
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:40px;">No history found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(s => {
+      const color = getColor(s.name);
+      const cells = FIELDS.map(f => {
+        const v = s[f.key] || 0;
+        return `<td class="${v === 0 ? 'cell-zero' : ''}">${v}</td>`;
+      }).join('');
+      return `<tr>
+        <td>
+          <div class="badge-name">
+            <div class="avatar" style="background:${color}">${initials(s.name)}</div>
+            ${s.name}
+          </div>
+        </td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">${s.date}</td>
+        ${cells}
+      </tr>`;
+    }).join('');
+  }
+
+  // ── Toast ────────────────────────────────────────────────────
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  // ── Auto-refresh ─────────────────────────────────────────────
+  setInterval(() => {
+    const page = document.querySelector('.page.active').id;
+    if (page === 'page-dashboard') loadDashboard();
+  }, 30000); // every 30s
+
+  // ── Init ─────────────────────────────────────────────────────
+  populateSelects();
+  loadDashboard();
+</script>
+</body>
+</html>
